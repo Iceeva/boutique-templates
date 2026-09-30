@@ -1,0 +1,72 @@
+// Schéma Prisma — PostgreSQL
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"] // rhel = runtime Vercel
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id        Int        @id @default(autoincrement())
+  slug      String     @unique
+  name      String
+  position  Int        @default(0)
+  templates Template[]
+}
+
+model Template {
+  id            String         @id @default(cuid())
+  slug          String         @unique
+  title         String
+  description   String         @default("")
+  tags          String[]       @default([])
+  categoryId    Int?
+  category      Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  entryPath     String         @default("index.html") // page affichée dans l'aperçu
+  published     Boolean        @default(true)
+  views         Int            @default(0)
+  copies        Int            @default(0)
+  downloads     Int            @default(0)
+  cleanupReport Json? // ce qui a été retiré / conservé à l'import
+  files         TemplateFile[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([published, createdAt])
+  @@index([categoryId])
+}
+
+// Un fichier du template. Texte -> `text`, binaire (images, polices…) -> `data`.
+// Les fichiers sont stockés "propres" : initiales et badge sont ajoutés à la lecture.
+model TemplateFile {
+  id         String   @id @default(cuid())
+  templateId String
+  template   Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  path       String
+  mime       String
+  isText     Boolean
+  size       Int
+  text       String?
+  data       Bytes?
+  createdAt  DateTime @default(now())
+
+  @@unique([templateId, path])
+}
+
+// Ligne unique (id = 1) : signature appliquée automatiquement à tous les templates.
+model SiteSettings {
+  id            Int      @id @default(1)
+  siteName      String   @default("Boutique Templates")
+  initials      String   @default("")
+  displayName   String   @default("")
+  badgeEnabled  Boolean  @default(true)
+  badgePosition String   @default("bottom-right") // top-left | top-right | bottom-left | bottom-right
+  badgeColor    String   @default("#ffffff")
+  badgeBg       String   @default("#111111")
+  commentHeader Boolean  @default(true)
+  blockedTerms  String[] @default(["Coding Team", "CodingTeam", "Coding Tuto", "CodingTuto", "codingtemplate"])
+  updatedAt     DateTime @updatedAt
+}

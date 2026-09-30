@@ -1,0 +1,10 @@
+{
+  "rewrites": [
+    { "source": "/p/:slug/:path*", "destination": "/api/preview?slug=:slug&path=:path*" },
+    { "source": "/p/:slug", "destination": "/api/preview?slug=:slug" },
+    { "source": "/api/admin/:route*", "destination": "/api/admin?route=:route*" },
+    { "source": "/t/:slug", "destination": "/template.html" },
+    { "source": "/admin", "destination": "/admin/index.html" }
+  ],
+  "functions": { "api/*.js": { "maxDuration": 30 } }
+}
