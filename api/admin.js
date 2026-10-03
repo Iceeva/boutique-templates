@@ -3,20 +3,12 @@ import { prisma, getSettings } from '../lib/db.js';
 import { send, fail, slugify } from '../lib/http.js';
 import { checkPassword, sessionCookie, clearCookie, isAdmin, requireAdmin } from '../lib/auth.js';
 import { sanitizeText } from '../lib/sanitize.js';
-import { isTextPath, mimeOf } from '../lib/render.js';
+import { normPath, prepareFile, pickEntry } from '../lib/ingest.js';
 
 const POSITIONS = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
 const COLOR = /^#[0-9a-f]{3,8}$/i;
 const clean = (s, n) => String(s ?? '').replace(/[<>&"'`]/g, '').trim().slice(0, n);
 const tagsOf = (v) => [...new Set((Array.isArray(v) ? v : String(v || '').split(',')).map((t) => String(t).trim().toLowerCase().slice(0, 30)).filter(Boolean))].slice(0, 12);
-const normPath = (p) => {
-  const n = String(p || '').replace(/\\/g, '/').replace(/^\/+/, '');
-  const parts = n.split('/');
-  if (!n || n.length > 300 || parts.some((x) => x === '' || x === '..' || x === '.')) return null;
-  if (/(^|\/)(__MACOSX|\.git|node_modules)(\/|$)|(^|\/)(\.DS_Store|Thumbs\.db)$/.test(n)) return null;
-  return n;
-};
-const looksBinary = (buf) => buf.subarray(0, 4000).includes(0);
 
 async function uniqueSlug(base) {
   let slug = slugify(base), i = 2;
@@ -114,15 +106,9 @@ export default async function handler(req, res) {
           for (const f of Array.isArray(body.files) ? body.files : []) {
             const path = normPath(f.path);
             if (!path) { skipped.push(String(f.path)); continue; }
-            let buf = Buffer.from(String(f.b64 || ''), 'base64');
-            const isText = isTextPath(path) && !looksBinary(buf);
-            let text = null, data = null;
-            if (isText) {
-              const r = sanitizeText(path, buf.toString('utf8').replace(/^\uFEFF/, ''), s.blockedTerms);
-              text = r.text; removed.push(...r.removed); kept.push(...r.kept);
-              buf = Buffer.from(text, 'utf8');
-            } else data = buf;
-            const row = { path, mime: mimeOf(path), isText, size: buf.length, text, data };
+            const r = prepareFile(path, Buffer.from(String(f.b64 || ''), 'base64'), s.blockedTerms);
+            removed.push(...r.removed); kept.push(...r.kept);
+            const row = r.row;
             ops.push(prisma.templateFile.upsert({ where: { templateId_path: { templateId: b, path } }, update: row, create: { ...row, templateId: b } }));
           }
           await prisma.$transaction(ops);
@@ -132,12 +118,11 @@ export default async function handler(req, res) {
       // Choisit la page d'entrée et enregistre le rapport de nettoyage.
       if (b && c === 'finalize' && m === 'POST') {
         const files = await prisma.templateFile.findMany({ where: { templateId: b }, select: { path: true } });
-        const pages = files.map((f) => f.path).filter((p) => /\.html?$/i.test(p));
-        pages.sort((x, y) => x.split('/').length - y.split('/').length || (/(^|\/)index\.html?$/i.test(y) ? 1 : 0) - (/(^|\/)index\.html?$/i.test(x) ? 1 : 0));
+        const entryPath = pickEntry(files.map((f) => f.path));
         const r = body.report || {};
         const report = { removed: (r.removed || []).slice(0, 200), kept: (r.kept || []).slice(0, 50), skipped: (r.skipped || []).slice(0, 50) };
-        const t = await prisma.template.update({ where: { id: b }, data: { entryPath: pages[0] || 'index.html', cleanupReport: report } });
-        return send(res, 200, { entryPath: t.entryPath, files: files.length, hasPage: pages.length > 0 });
+        const t = await prisma.template.update({ where: { id: b }, data: { entryPath, cleanupReport: report } });
+        return send(res, 200, { entryPath: t.entryPath, files: files.length, hasPage: !!entryPath });
       }
       // Re-nettoie les fichiers déjà importés avec la liste de termes actuelle.
       if (b && c === 'sanitize' && m === 'POST') {

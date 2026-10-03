@@ -4,45 +4,27 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <title>Administration</title>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <link rel="icon" href="/favicon.svg">
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/site.css">
-<style>
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px;margin:24px 0}
-.panel h2{font:700 22px var(--display);margin:0 0 4px}.panel .sub{color:var(--muted);margin:0 0 18px}
-.login{max-width:380px;margin:12vh auto}.login form{display:grid;gap:12px}
-.f{display:grid;gap:5px;margin-bottom:14px}.f>span{font-weight:600;font-size:13.5px}.f small{color:var(--muted)}
-.f input:not([type=checkbox]):not([type=radio]):not([type=color]),.f select,.f textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
-.f textarea{font:13px/1.5 var(--mono);min-height:120px}
-.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0 16px}
-.check{display:flex;gap:8px;align-items:center;margin-bottom:12px}
-.nav{display:flex;gap:4px;margin-left:12px}.nav button{background:none;border:0;padding:8px 14px;border-radius:999px;cursor:pointer;color:var(--muted)}.nav button[aria-current=true]{background:var(--bg);color:var(--ink);font-weight:600}
-table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:middle}th{font-size:13px;color:var(--muted);font-weight:500}
-td .btn{height:32px;padding:0 12px;font-size:13.5px}.acts{display:flex;gap:6px;flex-wrap:wrap}
-.src-pick{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
-.log{list-style:none;padding:0;margin:14px 0 0;font:13px/1.6 var(--mono);max-height:260px;overflow:auto}.log .bad{color:var(--danger)}
-.pill{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:2px 9px;color:var(--muted)}.pill.on{color:#1d8a4e;border-color:currentColor}
-.report{font-size:13px;color:var(--muted);margin-top:6px}.report li{margin:2px 0}
-.chipbox{display:flex;gap:8px;flex-wrap:wrap}.chipbox .chip{display:inline-flex;gap:8px;align-items:center;cursor:default}.chipbox .chip button{background:none;border:0;cursor:pointer;color:var(--danger)}
-.demo{display:inline-block;padding:7px 11px;border-radius:999px;font:600 12px/1 system-ui;letter-spacing:.04em}
-[hidden]{display:none!important}
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/site.css"><link rel="stylesheet" href="/css/admin.css">
 </head>
 <body>
 <div id="login" class="panel login" hidden>
   <h2>Administration</h2><p class="sub">Connecte-toi pour gérer les templates.</p>
-  <form id="loginForm"><input type="password" id="pw" placeholder="Mot de passe" autocomplete="current-password" required aria-label="Mot de passe">
+  <form id="loginForm"><input class="search-input" type="password" id="pw" placeholder="Mot de passe" autocomplete="current-password" required aria-label="Mot de passe" style="height:50px;padding:0 20px;border-radius:999px;border:1px solid var(--line);background:var(--bg)">
     <button class="btn primary" type="submit">Se connecter</button><p id="loginErr" class="sub" style="color:var(--danger);margin:0" role="alert"></p></form>
 </div>
 
 <div id="app" hidden>
-  <header class="top"><a class="brand" href="/">Admin</a>
-    <nav class="nav" id="nav"><button data-s="list">Templates</button><button data-s="edit">Ajouter</button><button data-s="sig">Signature & nettoyage</button><button data-s="cats">Catégories</button></nav>
-    <span class="sp"></span><a class="btn" href="/" target="_blank">Voir le site</a><button class="btn" id="logout">Se déconnecter</button></header>
+  <header class="top"><a class="brand" href="/"><i>&lt;/&gt;</i>Admin</a>
+    <nav class="nav" id="nav"><button data-s="list">Templates</button><button data-s="edit">Ajouter</button><button data-s="sig">Signature &amp; nettoyage</button><button data-s="cats">Catégories</button></nav>
+    <span class="sp"></span><a class="btn" href="/" target="_blank">Voir le site</a><span id="themeSlot"></span><button class="btn" id="logout">Quitter</button></header>
   <main class="wrap">
+  <div class="kpis" id="kpis"></div>
 
   <section id="s-list" class="panel"><h2>Templates</h2><p class="sub" id="listSub"></p>
-    <div style="overflow:auto"><table><thead><tr><th>Titre</th><th>Fichiers</th><th>Vues</th><th>Copies</th><th>ZIP</th><th>Statut</th><th></th></tr></thead><tbody id="rows"></tbody></table></div></section>
+    <div class="table"><table><thead><tr><th>Titre</th><th>Fichiers</th><th>Vues</th><th>Copies</th><th>ZIP</th><th>Statut</th><th></th></tr></thead><tbody id="rows"></tbody></table></div></section>
 
   <section id="s-edit" class="panel" hidden><h2 id="formTitle">Ajouter un template</h2>
     <p class="sub" id="formSub">Tes initiales sont appliquées automatiquement, et les mentions d’auteur d’origine sont retirées à l’import.</p>
@@ -61,7 +43,7 @@ td .btn{height:32px;padding:0 12px;font-size:13.5px}.acts{display:flex;gap:6px;f
         <input type="file" id="in-zip" accept=".zip,application/zip" hidden>
         <input type="file" id="in-folder" webkitdirectory multiple hidden>
         <input type="file" id="in-files" multiple hidden>
-        <div id="m-file"><button class="btn" type="button" id="pickBtn">Choisir…</button> <span id="picked" class="sub"></span></div>
+        <div id="m-file"><div class="drop" id="drop" tabindex="0" role="button"><b id="dropHint">Dépose une archive ZIP ici</b><span>ou clique pour choisir · jusqu’à 2,5 Mo par fichier</span><span id="picked" class="mono" style="color:var(--accent-text)"></span></div></div>
         <div id="m-manual" hidden>
           <label class="f"><span>HTML</span><textarea id="c-html" spellcheck="false" placeholder="<body>…</body>"></textarea></label>
           <label class="f"><span>CSS</span><textarea id="c-css" spellcheck="false"></textarea></label>
@@ -94,7 +76,7 @@ td .btn{height:32px;padding:0 12px;font-size:13.5px}.acts{display:flex;gap:6px;f
 
   <section id="s-cats" class="panel" hidden><h2>Catégories</h2><p class="sub">Supprimer une catégorie ne supprime pas ses templates.</p>
     <div class="chipbox" id="catList"></div>
-    <form id="catForm" class="search" style="margin-top:18px"><input id="catName" placeholder="Nouvelle catégorie" maxlength="40" aria-label="Nouvelle catégorie"><button class="btn primary" type="submit">Ajouter</button></form></section>
+    <form id="catForm" class="search inline"><input id="catName" placeholder="Nouvelle catégorie" maxlength="40" aria-label="Nouvelle catégorie" style="padding:0 20px"><button class="btn primary" type="submit">Ajouter</button></form></section>
   </main>
 </div>
 <script type="module" src="/js/admin.js"></script>

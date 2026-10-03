@@ -1,4 +1,4 @@
-import { api, el, fmt, toast } from './common.js';
+import { api, el, fmt, toast, initTheme } from './common.js';
 import { readZip } from './zip.js';
 
 const $ = (id) => document.getElementById(id);
@@ -9,6 +9,7 @@ let templates = [], categories = [], editing = null, mode = 'zip';
 
 // ---------- session ----------
 async function boot() {
+  if (!$('themeSlot').children.length) initTheme($('themeSlot'));
   const me = await api('/api/admin/me').catch(() => ({}));
   $('login').hidden = !!me.authenticated; $('app').hidden = !me.authenticated;
   if (me.authenticated) { await Promise.all([loadCats(), loadList(), loadSettings()]); go('list'); }
@@ -22,6 +23,7 @@ $('logout').addEventListener('click', async () => { await api('/api/admin/logout
 
 function go(s) {
   for (const n of ['list', 'edit', 'sig', 'cats']) $(`s-${n}`).hidden = n !== s;
+  $('kpis').hidden = s !== 'list';
   $('nav').querySelectorAll('button').forEach((b) => b.toggleAttribute('aria-current', b.dataset.s === s));
   if (s === 'edit' && !editing) resetForm();
 }
@@ -43,6 +45,9 @@ $('catForm').addEventListener('submit', async (e) => {
 // ---------- liste ----------
 async function loadList() {
   templates = await api('/api/admin/templates');
+  const sum = (k) => templates.reduce((n, t) => n + t[k], 0);
+  $('kpis').replaceChildren(...[['Templates', templates.length], ['Vues', sum('views')], ['Codes copiés', sum('copies')], ['ZIP téléchargés', sum('downloads')]]
+    .map(([l, v]) => el('div', { class: 'kpi' }, el('b', { text: fmt(v) }), el('span', { text: l }))));
   $('listSub').textContent = templates.length ? `${templates.length} template${templates.length > 1 ? 's' : ''}` : 'Aucun template pour le moment. Ajoute le premier.';
   $('rows').replaceChildren(...templates.map((t) => {
     const r = t.cleanupReport;
@@ -66,13 +71,25 @@ function setMode(m) {
   mode = m;
   $('srcPick').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.m === m)));
   $('m-manual').hidden = m !== 'manual'; $('m-file').hidden = m === 'manual';
-  $('picked').textContent = ''; ['zip', 'folder', 'files'].forEach((k) => ($(`in-${k}`).value = ''));
+  $('picked').textContent = ''; $('dropHint').textContent = HINT[m] || ''; ['zip', 'folder', 'files'].forEach((k) => ($(`in-${k}`).value = ''));
 }
 $('srcPick').addEventListener('click', (e) => e.target.dataset.m && setMode(e.target.dataset.m));
-$('pickBtn').addEventListener('click', () => $(`in-${mode}`).click());
-for (const k of ['zip', 'folder', 'files']) $(`in-${k}`).addEventListener('change', (e) => {
-  const f = [...e.target.files]; $('picked').textContent = f.length === 1 ? f[0].name : `${f.length} fichiers sélectionnés`;
+const HINT = { zip: 'Dépose une archive ZIP ici', folder: 'Clique pour choisir un dossier', files: 'Dépose des fichiers ici' };
+function picked(k, files) {
+  const f = [...files]; $('picked').textContent = f.length === 1 ? f[0].name : f.length ? `${f.length} fichiers sélectionnés` : '';
   if (!$('title').value && k === 'zip' && f[0]) $('title').value = f[0].name.replace(/\.zip$/i, '').replace(/[_-]+/g, ' ');
+}
+for (const k of ['zip', 'folder', 'files']) $(`in-${k}`).addEventListener('change', (e) => picked(k, e.target.files));
+const drop = $('drop');
+drop.addEventListener('click', () => $(`in-${mode}`).click());
+drop.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $(`in-${mode}`).click(); } });
+['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, () => drop.classList.remove('over')));
+drop.addEventListener('drop', (e) => {
+  e.preventDefault();
+  const files = e.dataTransfer.files; if (!files.length) return;
+  const k = files.length === 1 && /\.zip$/i.test(files[0].name) ? 'zip' : 'files';
+  setMode(k); $(`in-${k}`).files = files; picked(k, files);
 });
 
 function resetForm() {
@@ -145,7 +162,7 @@ $('form').addEventListener('submit', async (e) => {
       await flush();
       const fin = await api(`/api/admin/templates/${t.id}/finalize`, { method: 'POST', body: JSON.stringify({ report }) });
       line.textContent = `${fin.files} fichiers importés · page d’aperçu : ${fin.entryPath}`;
-      if (!fin.hasPage) log('Aucune page HTML trouvée : l’aperçu sera vide.', true);
+      if (!fin.hasPage) log('Aucune page HTML trouvée : ce template sera en « code seul », sans aperçu.');
       if (report.removed.length) log(`${report.removed.length} mention(s) d’auteur retirée(s) ou remplacée(s).`);
       if (report.kept.length) log(`${report.kept.length} licence(s) open source conservée(s) (obligatoires).`);
       report.skipped.forEach((s) => log(`Ignoré (trop gros pour Vercel) : ${s}`, true));

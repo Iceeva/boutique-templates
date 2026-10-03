@@ -4,15 +4,25 @@
   "version": "1.0.0",
   "type": "module",
   "description": "Galerie de templates web (aperçu, code, ZIP) avec espace admin — JS natif, Vercel + Postgres.",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "node prisma/seed.js",
     "dev": "vercel dev",
-    "test": "node test/run.js"
+    "test": "node test/run.js && node scripts/check-seed.js",
+    "seed:check": "node scripts/check-seed.js",
+    "demo": "node scripts/demo.js"
   },
-  "prisma": { "seed": "node prisma/seed.js" },
-  "dependencies": { "@prisma/client": "^6.0.0" },
-  "devDependencies": { "prisma": "^6.0.0" }
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.0.0"
+  },
+  "devDependencies": {
+    "prisma": "^6.0.0"
+  }
 }

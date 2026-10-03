@@ -25,13 +25,13 @@ export function readZip(buf) {
   const out = [];
   for (let i = 0; i < count; i++) {
     if (dv.getUint32(p, true) !== 0x02014b50) throw new Error('Archive ZIP corrompue');
-    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true), usize = dv.getUint32(p + 24, true);
+    const flags = dv.getUint16(p + 8, true), method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true), usize = dv.getUint32(p + 24, true);
     const nl = dv.getUint16(p + 28, true), xl = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true), off = dv.getUint32(p + 42, true);
     const path = decodeName(u8.subarray(p + 46, p + 46 + nl));
     p += 46 + nl + xl + cl;
     const dir = path.endsWith('/');
     out.push({
-      path, dir, size: usize,
+      path, dir, size: usize, encrypted: !!(flags & 1),
       async bytes() {
         if (dir) return new Uint8Array(0);
         const start = off + 30 + dv.getUint16(off + 26, true) + dv.getUint16(off + 28, true);

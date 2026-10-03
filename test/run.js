@@ -86,4 +86,14 @@ assert.ok(requireAdmin({ method: 'GET', headers: { cookie } }));
 assert.ok(!requireAdmin({ method: 'POST', headers: { cookie } }));
 assert.ok(requireAdmin({ method: 'POST', headers: { cookie, 'x-requested-with': 'fetch' } }));
 ok('Auth : mot de passe, cookie signé, falsification refusée, en-tête CSRF exigé');
+// --- Import partagé (admin + seed) ---
+const { normPath, prepareFile, pickEntry } = await import('../lib/ingest.js');
+assert.equal(normPath('/Architech/index.html'), 'Architech/index.html');
+assert.equal(normPath('../x'), null); assert.equal(normPath('__MACOSX/a'), null); assert.equal(normPath('a/.DS_Store'), null);
+assert.equal(pickEntry(['css/a.css', 'pages/about.html', 'index.html', 'a/index.html']), 'index.html');
+assert.equal(pickEntry(['main.py', 'README.md']), '');
+assert.equal(prepareFile('a.png', Buffer.from([0x89, 0, 1]), []).row.isText, false);
+assert.equal(prepareFile('a.html', Buffer.from('<p>ok</p>'), []).row.isText, true);
+assert.equal(prepareFile('fake.js', Buffer.from([1, 0, 2, 0]), []).row.isText, false);
+ok('Import : chemins dangereux, page d’entrée, texte/binaire');
 console.log(`\n${n} groupes de tests OK`);

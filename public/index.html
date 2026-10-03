@@ -4,28 +4,35 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Templates web à copier ou télécharger</title>
 <meta name="description" content="Galerie de templates web : aperçu en direct, code à copier, projet complet en ZIP. Sans compte.">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <link rel="icon" href="/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/site.css">
 </head>
 <body>
-<header class="top"><a class="brand" id="brand" href="/">Templates</a></header>
+<header class="top"><a class="brand" href="/"><i>&lt;/&gt;</i><span id="brand">Templates</span></a><span class="sp"></span><span id="themeSlot"></span></header>
 <main class="wrap">
   <section class="hero">
-    <h1>Des templates qui tournent déjà. Copie le code ou prends le ZIP.</h1>
-    <form class="search" role="search" onsubmit="return false">
-      <input id="q" type="search" placeholder="Un blog, une page de connexion, un dashboard…" autocomplete="off" aria-label="Rechercher un template">
-      <select id="sort" aria-label="Trier">
-        <option value="recent">Plus récents</option><option value="popular">Plus vus</option><option value="downloads">Plus téléchargés</option>
-      </select>
-    </form>
-    <div class="chips" id="chips" role="group" aria-label="Catégories"></div>
+    <div>
+      <h1>Des templates qui <mark>tournent</mark> déjà.</h1>
+      <p class="lead">Regarde-les en vrai, copie le code ou prends le projet complet en ZIP. Sans compte, sans e-mail.</p>
+      <form class="search" role="search" onsubmit="return false">
+        <div class="field"><span id="searchIc"></span>
+          <input id="q" type="search" placeholder="Blog, connexion, dashboard…" autocomplete="off" aria-label="Rechercher un template">
+          <kbd aria-hidden="true">/</kbd></div>
+        <select id="sort" aria-label="Trier"><option value="recent">Récents</option><option value="popular">Plus vus</option><option value="downloads">Plus téléchargés</option></select>
+      </form>
+      <div class="stats" id="stats"></div>
+    </div>
+    <div class="stack" id="stack" aria-hidden="true"></div>
   </section>
+  <div class="bar"><div class="chips" id="chips" role="group" aria-label="Catégories"></div></div>
   <div class="grid" id="grid" aria-live="polite"></div>
   <p class="empty" id="empty" hidden>Aucun template ne correspond. Essaie un autre mot ou retire le filtre.</p>
   <div class="more"><button class="btn" id="more" hidden>Afficher plus</button></div>
 </main>
+<footer class="foot"><div class="wrap" id="foot">Templates à copier ou télécharger</div></footer>
 <script type="module" src="/js/gallery.js"></script>
 </body>
 </html>

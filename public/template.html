@@ -3,14 +3,16 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Template</title>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <link rel="icon" href="/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/site.css">
 </head>
 <body>
-<header class="top"><a class="brand" id="brand" href="/">← Tous les templates</a></header>
+<header class="top"><a class="brand" href="/"><i>&lt;/&gt;</i><span id="brand">Templates</span></a><span class="sp"></span><span id="themeSlot"></span></header>
 <main class="wrap" id="main"><p class="empty">Chargement…</p></main>
+<footer class="foot"><div class="wrap" id="foot"></div></footer>
 <script type="module" src="/js/detail.js"></script>
 </body>
 </html>

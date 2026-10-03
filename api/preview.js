@@ -10,7 +10,7 @@ export default async function handler(req, res) {
 
     if (!path) {
       const t = await prisma.template.findFirst({ where: { slug, published: true }, select: { entryPath: true } });
-      if (!t) { res.statusCode = 404; return res.end('Introuvable'); }
+      if (!t || !t.entryPath) { res.statusCode = 404; return res.end('Pas d’aperçu pour ce template'); }
       res.statusCode = 302;
       res.setHeader('Location', `/p/${slug}/${t.entryPath.split('/').map(encodeURIComponent).join('/')}`);
       return res.end();
